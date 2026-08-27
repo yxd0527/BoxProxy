@@ -13,7 +13,7 @@
     {
       "type": "remote",
       "tag": "订阅",
-      "url": "https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a",
+      "url": "",
       "path": "./配置/订阅.json",
       "auto_detect": true
     }
