@@ -3,3 +3,4 @@
 备份
 直链示例 
 https://cdn.jsdelivr.net/gh/yxd0527/BoxProxy@main/config/BD-YD.json
+加速链接https://cdn.jsdelivr.net/gh
