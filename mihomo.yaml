@@ -2,12 +2,12 @@
 proxy-providers:
   链式:
     type: http
-    url: https://ulw1y.no-mad-sub.one/link/iYYEyRCDaKqt5QhK?clash=3&extend=1
+    url: 
     path: ./配置/1.yaml
     dialer-proxy: 总模式
   付费:
     type: http
-    url: https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a
+    url: 
     path: ./配置/2.yaml     
 
 listeners:
