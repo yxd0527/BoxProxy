@@ -1,3 +1,5 @@
 百度 
 配置
 备份
+直链示例 
+https://cdn.jsdelivr.net/gh/yxd0527/BoxProxy@main/config/BD-YD.json
