@@ -1,0 +1,122 @@
+#机场    
+proxy-providers:
+  链式:
+    type: http
+    url: https://ulw1y.no-mad-sub.one/link/iYYEyRCDaKqt5QhK?clash=3&extend=1
+    path: ./配置/1.yaml
+    dialer-proxy: 总模式
+  付费:
+    type: http
+    url: https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a
+    path: ./配置/2.yaml     
+
+listeners:
+  - name: ebpf-in
+    type: ebpf
+    network:
+      - tcp
+      - udp
+    udp-timeout: 300
+    dns-mode: hijack
+    redirect-address:
+      - 127.128.0.0/9
+
+mode: rule
+ipv6: false
+log-level: silent
+allow-lan: true
+unified-delay: true
+tcp-concurrent: false
+find-process-mode: strict
+external-controller: 0.0.0.0:9090
+external-ui: ./配置/UI
+external-ui-url: https://v6.gh-proxy.com/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages-no-fonts.zip
+secret: yxd1120
+profile:
+  store-selected: true
+  store-fake-ip: false
+
+dns:
+  enable: true
+  ipv6: false
+  listen: 0.0.0.0:1053
+  enhanced-mode: redir-host
+  nameserver:
+    - 223.5.5.5
+  nameserver-policy:
+    "rule-set:Proxy":
+      - 8.8.8.8
+B: &B
+  type: http
+  port: 443
+  udp: false
+  http-mod: tunnel
+  skip-cert-verify: true
+  headers:
+    Host: "pushbos.baidu.com"
+    X-T5-Auth: "1109293052"
+    Connection: "Keep-Alive"
+    User-Agent: "okhttp/3.11.0 Dalvik/2.1.0 (Linux; U; Android 16;  Xiaomi 17 Pro Build/BP2A.250605.031.A3) baiduboxapp/13.10.0.10 (Baidu; P1 16)"            
+proxies:
+  - name: DNS_Hijack
+    type: dns
+  - name: 广州
+    server: 183.240.98.84
+    <<: *B
+  - name: 南京
+    server: 36.155.169.188
+    <<: *B
+  - name: Baidu
+    server: cloudnproxy.baidu.com
+    # 备 server: cloudnproxy.n.shifen.com
+    <<: *B
+        
+proxy-groups:
+  - name: 总模式
+    type: select
+    proxies:
+      - 广州
+      - Baidu
+      - 南京
+      - DIRECT
+    icon: https://gh.301.ee/https://raw.githubusercontent.com/NB921/picture/main/coinspot.png
+  - name: 国外
+    type: select
+    use:
+      - 链式
+      - 付费
+    icon: https://gh.301.ee/https://raw.githubusercontent.com/NB921/picture/main/Golbal.png
+  - name: UDP
+    type: select
+    proxies:
+      - DIRECT
+      - REJECT
+    icon: https://gh.301.ee/https://raw.githubusercontent.com/NB921/picture/main/Speed.png 
+        
+rules:
+  - PROCESS-NAME,com.tencent.mm,DIRECT
+  - DST-PORT,53,DNS_Hijack
+  - AND,((PROCESS-NAME,com.ss.android.ugc.aweme),(NETWORK,UDP)),REJECT  
+  - RULE-SET,Telegram_IP,国外
+  - RULE-SET,Proxy,国外
+  - NETWORK,UDP,UDP
+  - MATCH,总模式
+  
+  
+  
+  
+  
+  
+  
+  
+C: &C {type: http, behavior: ipcidr, format: mrs}
+D: &D {type: http, behavior: domain, format: mrs}  
+rule-providers:
+  Proxy:
+    <<: *D
+    path: ./配置/geolocation-!cn.mrs    
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs"
+  Telegram_IP:
+    <<: *C
+    path: ./配置/Telegram_IP.mrs
+    url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo-lite/geoip/telegram.mrs"
