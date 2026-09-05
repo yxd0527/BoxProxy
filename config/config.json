@@ -1,0 +1,265 @@
+{
+  "providers": [
+    {
+      "type": "remote",
+      "tag": "付费",
+      "url": "https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a",
+      "exclude": "(?i)(到期|剩余)",
+      "include": "",
+      "user_agent": "singbox",
+      "download_detour": "✅ Direct",
+      "path": "./providers/P1.json",
+      "auto_detect": true,
+      "update_interval": "24h"
+    },
+    {
+      "type": "remote",
+      "tag": "免费",
+      "url": "https://ulw1y.no-mad-sub.one/link/iYYEyRCDaKqt5QhK?clash=3&extend=1",
+      "download_detour": "✅ Direct",
+      "path": "./providers/P2.json"
+    },
+    {
+      "type": "remote",
+      "tag": "百度直连",
+      "download_detour": "✅ Direct",
+      "url": "https://cdn.jsdelivr.net/gh/yxd0527/BoxProxy@main/config/BD-YD.json",
+      "path": "./providers/P3.json"
+    },
+    {
+      "type": "remote",
+      "tag": "链式",
+      "download_detour": "✅ Direct",
+      "url": "https://ulw1y.no-mad-sub.one/link/iYYEyRCDaKqt5QhK?clash=3&extend=1",
+      "path": "./providers/P4.json",
+      "override_dialer": {
+        "detour": "🇨🇳 China"
+      }
+    }
+  ],
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui": "./UI",
+      "secret": "yxd1120",
+      "external_ui_download_url": "https://v6.gh-proxy.org/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages-no-fonts.zip",
+      "external_ui_download_detour": "✅ Direct",
+      "default_mode": "rule"
+    },
+    "urltest_unified_delay": true,
+    "cache_file": {
+      "enabled": true,
+      "store_fakeip": true,
+      "store_dns": true,
+      "path": "./cache.db"
+    }
+  },
+  "log": {
+    "level": "error",
+    "output": "./box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "dns_proxy",
+        "type": "https",
+        "server": "8.8.8.8",
+        "server_url": "https://dns.google/dns-query",
+        "detour": "🌍 Proxy"
+      },
+      {
+        "tag": "dns_proxy1",
+        "type": "https",
+        "server": "1.1.1.1",
+        "server_url": "https://cloudflare-dns.com/dns-query",
+        "detour": "🌍 Proxy"
+      },
+      {
+        "tag": "dns_direct",
+        "type": "udp",
+        "server": "223.5.5.5"
+      },
+      {
+        "tag": "dns_direct1",
+        "type": "udp",
+        "server": "119.29.29.29"
+      },
+            {
+        "type": "group",
+        "tag": "GW",
+        "servers": ["dns_proxy", "dns_proxy1"]
+      },
+      {
+        "type": "group",
+        "tag": "GN",
+        "servers": ["dns_direct", "dns_direct1"]
+      },
+      {
+        "type": "fakeip",
+        "tag": "dns_fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [
+      {
+        "domain_keyword": ["ntp", "time"],
+        "server": "GN"
+      },
+      {
+        "rule_set": ["Google"],
+        "server": "dns_fakeip"
+      }
+    ],
+    "final": "GN"
+  },
+  "route": {
+    "default_domain_resolver": "GN",
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "Google",
+        "url": "https://fastly.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs",
+        "path": "./rules/geosite-geolocation-!cn.srs",
+        "download_detour": "✅ Direct"
+      },
+      {
+        "type": "remote",
+        "tag": "telegramip",
+        "url": "https://v6.gh-proxy.org/https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/telegramip.srs",
+        "path": "./rules/telegramip.srs",
+        "download_detour": "✅ Direct"
+      },
+      {
+        "type": "inline",
+        "tag": "lanip",
+        "rules": [{"ip_cidr": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"]}]
+      },
+      {
+        "type": "inline",
+        "tag": "wechat",
+        "rules": [
+          {
+            "domain_suffix": [
+              "weixin.qq.com",
+              "wx.qq.com",
+              "wechat.qq.com",
+              "servicewechat.com",
+              "tenpay.com",
+              "qpic.cn",
+              "qlogo.cn"
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {"port": 53},
+          {"protocol": "dns"}
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "network": ["icmp"],
+        "outbound": "UDP"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {"port": 853},
+          {"network": "udp", "port": 443},
+          {"protocol": ["stun", "quic"]}
+        ],
+        "action": "reject"
+      },
+      {
+        "rule_set": ["Google"],
+        "action": "route",
+        "outbound": "🌍 Proxy"
+      },
+      {
+        "rule_set": ["telegramip"],
+        "action": "route",
+        "outbound": "🌍 Proxy"
+      },
+      {
+        "rule_set": ["wechat"],
+        "action": "route",
+        "outbound": "✅ Direct"
+      },
+      {
+        "network": ["udp"],
+        "action": "route",
+        "outbound": "⚡ CNS"
+      }
+    ],
+    "final": "🇨🇳 China",
+  },
+  "inbounds": [
+    {
+      "type": "ebpf",
+      "tag": "ebpf-in",
+      "redirect_address": ["127.128.0.0/9"],
+      "bypass_rule_set": ["lanip"]
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 1536
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "✅ Direct",
+      "type": "direct"
+    },
+    {
+      "tag": "🇨🇳 China",
+      "type": "selector",
+      "providers": ["百度直连"],
+      "outbounds": ["✅ Direct"],
+      "interrupt_exist_connections": true
+    },
+    {
+      "tag": "🌍 Proxy",
+      "type": "selector",
+      "outbounds": ["♻️ Chain", "✨ Auto","👆️ Manual"],
+      "use_all_providers": true,
+      "interrupt_exist_connections": true
+    },
+    {
+      "tag": "✨ Auto",
+      "type": "urltest",
+      "providers": ["免费","付费"],
+      "interrupt_exist_connections": true
+    },
+    {
+      "tag": "👆️ Manual",
+      "type": "selector",
+      "use_all_providers": true,
+      "interrupt_exist_connections": true
+    },
+    {
+      "tag": "♻️ Chain",
+      "type": "urltest",
+      "providers": ["链式"],
+      "interrupt_exist_connections": true
+    },
+    {
+      "tag": "⚡ CNS",
+      "type": "selector",
+      "outbounds": ["✅ Direct", "✨ Auto"],      
+      "interrupt_exist_connections": true
+    }
+  ]
+}

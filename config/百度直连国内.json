@@ -1,0 +1,171 @@
+{
+  "providers": [
+    {
+      "type": "remote",
+      "tag": "百度",
+      "url": "https://cdn.jsdelivr.net/gh/yxd0527/BoxProxy@main/config/BD-YD.json",
+      "path": "./providers/P3.json"
+    },
+    {
+      "type": "remote",
+      "tag": "机场",
+      "url": "https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a",
+      "path": "./providers/机场.json",
+    }
+  ],
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui": "./UI",
+      "secret": "yxd1120"
+    },
+    "urltest_unified_delay": true,
+    "cache_file": {
+      "enabled": true,
+      "path": "./cache.db"
+    }
+  },
+  "log": {
+    "level": "error",
+    "output": "./box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "reverse_mapping": true,
+    "servers": [
+      {
+        "type": "udp",
+        "tag": "ali",
+
+        "server": "223.5.5.5"
+      },
+      {
+        "type": "https",
+        "tag": "oversea",
+        "server": "8.8.8.8",
+        "detour": "国外"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": [
+          "geosite-cn"
+        ],
+        "server": "ali"
+      }
+    ],
+    "final": "oversea"
+  },
+  "inbounds": [
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 1536
+    },
+    {
+      "type": "ebpf",
+      "tag": "ebpf-in",
+      "redirect_address": ["127.128.0.0/9"]
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "百度直连",
+      "providers": ["百度"]
+    },
+    {
+      "type": "selector",
+      "tag": "UDP节点",
+      "outbounds": ["Direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "国外",
+      "providers": ["机场"]
+    },
+    {
+      "type": "selector",
+      "tag": "链式前置",
+      "providers": ["百度"],
+      "outbounds": ["Direct"]
+    },
+    {
+      "type": "direct",
+      "tag": "Direct"
+    }
+  ],
+  "route": {
+    "rule_set": [
+      {
+        "type": "local",
+        "tag": "geosite-cn",
+        "format": "binary",
+        "path": "./rules/geosite-cn.srs"
+      },
+      {
+        "type": "local",
+        "tag": "geoip-cn",
+        "format": "binary",
+        "path": "./rules/geoip-cn.srs"
+      }
+    ],
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          {
+            "protocol": "dns"
+          }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        // 私密DNS(DoT/DoQ 853) 拒绝: 应用秒回落普通DNS(已劫持进隧道), 853 也不再偷走机场流量
+        "port": 853,
+        "action": "reject"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "Direct"
+      },
+      {
+        "network": "udp",
+        "rule_set": ["geosite-cn", "geoip-cn"],
+        "outbound": "UDP节点"
+      },
+      {
+        "network": "udp",
+        "action": "reject"
+      },
+      {
+        "network": "tcp",
+        "rule_set": [
+          "geosite-cn"
+        ],
+        "outbound": "百度直连"
+      },
+      {
+        "network": "tcp",
+        "rule_set": [
+          "geoip-cn"
+        ],
+        "outbound": "百度直连"
+      }
+    ],
+    "final": "国外",
+    "auto_detect_interface": true,
+    "default_domain_resolver": {
+      "server": "ali",
+      "strategy": "ipv4_only"
+    }
+  }
+}
