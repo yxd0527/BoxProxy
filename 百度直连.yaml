@@ -1,0 +1,166 @@
+http_clients:
+  - tag: 拉取
+    headers:
+      User-Agent: sing-box/1.15
+    detour: 放行
+log:
+  level: warn #error
+  output: ./配置/box.log
+  timestamp: true
+A: &A
+  type: remote
+  override_dialer:
+    detour: 总模式
+B: &B
+  type: http
+  server_port: 443
+  headers:
+    Host: "pushbos.baidu.com"
+    #旧 Host:153.3.236.22:443
+    X-T5-Auth: "1109293052"
+    #旧 X-T5-Auth:683556433
+    Connection: "Keep-Alive"
+    User-Agent: "baiduboxapp/11.0.5.12 (Baidu; P1 11)"
+C: &C
+    type: selector
+    outbounds:
+      - 广州
+      - 南京
+      - Baidu
+      - 动态解析
+      - 放行
+experimental:
+  urltest_unified_delay: true
+  cache_file:
+    enabled: true
+    store_dns: true
+    path: ./配置/cache.db
+  clash_api:
+    external_controller: 0.0.0.0:9090
+    secret: yxd1120
+    external_ui: ./配置/UI
+    external_ui_download_url: https://v6.gh-proxy.org/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages-no-fonts.zip
+dns:
+  servers:
+    - type: hosts
+      tag: Hosts
+      predefined:
+        dns.alidns.com:
+          - 223.5.5.5
+          - 223.6.6.6
+        dns.google:
+          - 8.8.8.8
+          - 8.8.4.4
+    - type: https
+      tag: GN
+      server: dns.alidns.com
+      path: dns-query
+      domain_resolver: Hosts
+    - type: https
+      tag: GW
+      server: dns.google
+      path: dns-query
+      domain_resolver: Hosts
+      detour: 国外
+  rules:
+    - query_type:
+        - AAAA
+      action: reject
+    - rule_set:
+        - geosite-!cn
+      action: route
+      server: GW    
+  final: GN
+  optimistic: true
+  strategy: prefer_ipv4
+  
+providers:
+  - tag: P
+    <<: *A
+    url: https://gist.githubusercontent.com/jieluojun/d4b528ee3418740112357a80e940d912/raw/MLSub
+    path: ./机场/P.json
+  - tag: P1
+    <<: *A
+    url: https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a
+    path: ./机场/P1.json
+      
+inbounds:
+  - tag: ebpf-in
+    type: ebpf
+    local:
+      enabled: true
+      dns_mode: hijack
+      bypass_private_address: true
+      exclude_package:
+        - com.tencent.mm
+      ipv6: false
+    shared:
+      enabled: true
+      interface:
+        - wlan2
+        - p2p0 
+      ipv6: false  
+    network:
+      - tcp
+      - udp
+outbounds:
+  - tag: 总模式
+    <<: *C
+  - tag: 国外
+    type: selector
+    use_all_providers: true
+  - type: selector
+    tag: 抖音UDP
+    outbounds:
+      - 拒绝
+      - 放行
+  - type: selector
+    tag: CNS
+    use_all_providers: true 
+    include: (?i)(浙江|上海|北京)
+    outbounds:
+      - 放行
+      - 拒绝
+  - tag: 广州
+    server: 183.240.98.84
+    <<: *B
+  - tag: 南京
+    server: 36.155.169.188
+    <<: *B
+  - tag: Baidu
+    server: cloudnproxy.baidu.com
+    <<: *B
+  - tag: 动态解析
+    server: cloudnproxy.n.shifen.com
+    <<: *B
+  - type: direct
+    tag: 放行
+  - type: block
+    tag: 拒绝
+route: 
+  rule_set:
+    - type: local
+      tag: geosite-!cn
+      format: binary
+      path: ./规则/geosite-!cn.srs
+  rules:
+    - action: sniff  
+    - port: 853
+      action: reject
+    - package_name:
+         - com.ss.android.ugc.aweme
+      network: udp
+      outbound: 抖音UDP
+    - package_name:
+        - org.telegram.messenger
+      outbound: 国外   
+    - rule_set:
+        - geosite-!cn
+      outbound: 国外
+    - network: udp
+      outbound: CNS
+  final: 总模式 
+  auto_detect_interface: true
+  default_http_client: 拉取
+  default_domain_resolver:
+    server: GN

@@ -1,0 +1,126 @@
+log:
+  level: error
+  output: ./配置/box.log
+  timestamp: true
+
+dns:
+  servers:
+    - type: https
+      tag: GN
+      server: 223.5.5.5
+    - type: https
+      tag: GW
+      server: 8.8.8.8
+      detour: 国外
+  rules:
+    - rule_set:
+        - geosite-!cn
+      action: route
+      server: GW    
+  final: GN
+  optimistic: true
+  strategy: prefer_ipv4
+
+experimental:
+  urltest_unified_delay: true
+  cache_file:
+    enabled: true
+    store_dns: true
+    path: ./配置/cache.db
+  clash_api:
+    external_controller: 0.0.0.0:9090
+    secret: yxd1120
+    external_ui: ./配置/UI  
+    
+providers:
+  - tag: 机场
+    type: remote
+    path: ./机场/P.json
+    url: https://gist.githubusercontent.com/jieluojun/d4b528ee3418740112357a80e940d912/raw/MLSub 
+    override_dialer:
+      detour: 总模式  
+        
+inbounds:
+  - tag: ebpf-in
+    type: ebpf
+    network:
+      - tcp
+      - udp
+    udp_timeout: 5m
+    local:
+      ipv6: false
+      enabled: true
+      data_plane: tc
+      dns_mode: hijack
+      bypass_private_address: true
+      exclude_package:
+        - com.tencent.mm
+    shared:
+      ipv6: false
+      enabled: true
+      data_plane: packet_rewrite
+      dns_mode: respect_policy
+      bypass_private_address: true
+      interface:
+        - wlan2
+        - p2p0 
+        
+outbounds:
+  - tag: 总模式
+    type: selector
+    outbounds:
+      - 广州
+      - 放行
+  - tag: 国外
+    type: selector
+    use_all_providers: true
+  - type: selector
+    tag: CNS
+    use_all_providers: true 
+    include: (?i)(浙江|上海|北京)
+    outbounds:
+      - 放行
+  - tag: 广州
+    type: http
+    server_port: 443
+    server: 183.240.98.84
+    headers:
+      Host: "pushbos.baidu.com"
+      X-T5-Auth: "683556433"
+      X-T5-Auth: "1109293052"
+      User-Agent: "baiduboxapp/11.0.5.12 (Baidu; P1 11)"
+  - type: direct
+    tag: 放行
+    
+route: 
+  rule_set:
+    - type: local
+      tag: geosite-!cn
+      format: binary
+      path: ./规则/geosite-!cn.srs
+  rules:
+    - action: sniff  
+    - port: 853
+      action: reject
+    - package_name:
+      - com.ss.android.ugc.aweme
+      network: udp
+      port: [443,4443,8443]
+      action: reject
+    - package_name:
+        - org.telegram.messenger
+      outbound: 国外   
+    - rule_set:
+        - geosite-!cn
+      outbound: 国外
+    - network: udp
+      outbound: CNS
+  final: 总模式 
+  auto_detect_interface: true
+  default_http_client: 拉取
+  default_domain_resolver:
+    server: GN
+    
+http_clients:
+  - tag: 拉取
+    detour: 放行    
