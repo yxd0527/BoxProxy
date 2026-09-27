@@ -1,0 +1,62 @@
+Baidu: &Baidu
+  type: http
+  server_port: 443
+  headers:
+    Host: "pushbos.baidu.com"
+    X-T5-Auth: "1109293052"
+    Connection: "Keep-Alive"
+    User-Agent: "okhttp/3.11.0 Dalvik/2.1.0 (Linux; U; Android 16; Xiaomi 17 Pro Build/BP2A.250605.031.A3) baiduboxapp/13.10.0.10 (Baidu; P1 16)"
+    
+outbounds: 
+  - tag: 广东移动
+    server: 183.240.98.84
+    <<: *Baidu  
+    - tag: 南京移动
+    server: 36.155.169.188
+    <<: *Baidu
+  - tag: Baidu
+    server: cloudnproxy.baidu.com
+    <<: *Baidu
+  - tag: 动态解析
+    server: cloudnproxy.n.shifen.com
+    <<: *Baidu 
+  - tag: 江苏电信1
+    server: 180.101.50.208
+    <<: *Baidu
+  - tag: 江苏电信2
+    server: 180.101.50.249
+    <<: *Baidu
+  - tag: 北京电信1
+    server: 220.181.7.1
+    <<: *Baidu
+  - tag: 北京电信2
+    server: 220.181.33.174
+    <<: *Baidu
+  - tag: 北京电信3
+    server: 220.181.111.189
+    <<: *Baidu
+  - tag: 广东电信
+    server: 14.215.182.75
+    <<: *Baidu
+  - tag: 河北联通1
+    server: 110.242.70.69
+    <<: *Baidu
+  - tag: 河北联通2
+    server: 110.242.70.68
+    <<: *Baidu
+  - tag: 江苏联通1
+    server: 153.3.237.117
+    <<: *Baidu
+  - tag: 江苏联通2
+    server: 157.0.146.158
+    <<: *Baidu
+  - tag: 江苏联通3
+    server: 153.3.237.117
+    <<: *Baidu
+  - tag: 广东联通1
+    server: 163.177.17.6
+    <<: *Baidu
+  - tag: 广东联通2
+    server: 163.177.17.189
+    <<: *Baidu
+

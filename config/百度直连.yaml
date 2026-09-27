@@ -1,0 +1,150 @@
+http_clients:
+  - tag: 订阅
+    headers:
+      User-Agent: sing-box/1.15
+    detour: Direct
+log:
+  level: error
+  output: ./配置/box.log
+  timestamp: true
+
+experimental:
+  urltest_unified_delay: true
+  cache_file:
+    enabled: true
+    store_dns: true
+    path: ./配置/cache.db
+  clash_api:
+    external_controller: 0.0.0.0:9090
+    secret: yxd1120
+    external_ui: ./配置/UI  
+Baidu: &Baidu
+  type: http
+  server_port: 443
+  headers:
+    Host: pushbos.baidu.com
+    X-T5-Auth: "1109293052"
+    Connection: Keep-Alive
+    User-Agent: baiduboxapp
+Y: &Y
+    type: selector
+    outbounds:
+      - 广州
+      - 南京
+      - Baidu
+      - 动态解析
+      - Direct
+      - Block          
+X: &X
+  type: remote
+  override_dialer:
+    detour: 国内     
+providers:
+  - tag: 公益
+    <<: *X
+    path: ./机场/公益.json
+    url: https://gist.githubusercontent.com/jieluojun/d4b528ee3418740112357a80e940d912/raw/MLSub 
+  - tag: 三毛
+    <<: *X
+    path: ./机场/三毛.json
+    url: https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=ea6706e7d5f265d9ee3a875f03cf628a
+dns:  
+  servers:
+    - tag: GN
+      type: https  
+      server: 223.5.5.5
+      server_host: dns.alidns.com
+    - tag: GW
+      type: https
+      server: 8.8.8.8
+      server_host: dns.google
+      detour: 国外
+  rules:
+    - rule_set:
+        - proxy 
+      action: route
+      server: GW    
+  final: GN
+  strategy: prefer_ipv4
+  optimistic: true   
+inbounds:
+  - type: ebpf
+    tag: ebpf-in
+    local:
+      enabled: true
+      ipv6: false
+      data_plane: cgroup
+      dns_mode: hijack      
+      bypass_private_address: true
+      exclude_package:
+        - com.tencent.mm
+    shared:
+      enabled: true
+      ipv6: false    
+      interface:
+        - wlan2
+        - p2p0
+    network:
+      - tcp
+      - udp
+outbounds:
+  - tag: 国内
+    <<: *Y
+    default: 广州
+  - tag: 国外
+    type: selector
+    use_all_providers: true
+  - tag: QUIC
+    <<: *Y
+    default: Block
+  - tag: CNS
+    <<: *Y
+    default: Direct
+
+    
+  - tag: 广州
+    server: 183.240.98.84
+    <<: *Baidu 
+  - tag: 南京
+    server: 36.155.169.188
+    <<: *Baidu 
+  - tag: Baidu
+    server: cloudnproxy.baidu.com
+    <<: *Baidu 
+  - tag: 动态解析
+    server: cloudnproxy.n.shifen.com
+    <<: *Baidu 
+  - type: direct
+    tag: Direct
+  - type: block
+    tag: Block
+    
+route:
+  rule_set:
+    - type: remote
+      tag:
+        - proxy
+        - telegramip
+      url: https://v6.gh-proxy.org/https://github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/{tag}.srs
+      
+  rules:   
+  - action: sniff    
+  - package_name:
+       - com.ss.android.ugc.aweme
+    network: udp
+    port: 443
+    outbound: QUIC
+    
+  - rule_set:
+      - telegramip
+    outbound: 国外     
+  - rule_set:
+      - proxy
+    outbound: 国外         
+  - network: udp
+    outbound: CNS
+  final: 国内
+  auto_detect_interface: true 
+  default_http_client: 订阅
+  default_domain_resolver: 
+    server: GN 
